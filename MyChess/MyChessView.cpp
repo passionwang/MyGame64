@@ -46,7 +46,7 @@ int iBoard[8][8]={	{ 0,-1, 0,-1, 0,-1, 0,-1},
 CMyChessView::CMyChessView()
 {
 	// TODO: add construction code here
-	int (*p)[8];
+	int (*p)[8];//构造函数保存初始棋盘，具体内容见Move()
  	p = (int (*)[8])malloc(8*8*4);
 	memcpy_s(p,8*8*4,iBoard,8*8*4);
 	Reset::Board_Reset.push_front(p);
@@ -382,6 +382,7 @@ void iMove()
 	
 	memcpy_s(iBoard,8*8*4,Moving->Board_Copy,8*8*4);
 	delete Moving;
+	//Move中有介绍
 	int (*p)[8];
  	p = (int (*)[8])malloc(8*8*4);
 	memcpy_s(p,8*8*4,iBoard,8*8*4);
@@ -447,10 +448,13 @@ void Move(int iX,int iY)
 					iBoard[iM][iN]=iGetChess;
 					iGetChess=0;	turn=1; //iMove();	
 				}
-				int (*p)[8];
- 				p = (int (*)[8])malloc(8*8*4);
+				///////
+				////////
+				//落棋之后保存棋盘
+				int (*p)[8];//这个是一个数组指针，是指针，只有4字节，指向8*8的内容，所以8*8自己申请
+ 				p = (int (*)[8])malloc(8*8*4);//申请空间
 				memcpy_s(p,8*8*4,iBoard,8*8*4);
-				Reset::Board_Reset.push_front(p);
+				Reset::Board_Reset.push_front(p);//压入链表
 			}
 			else if(iBoard[iM][iN]==EMPTY&&Value==BLACK_KING)
 			{
@@ -541,9 +545,12 @@ void CMyChessView::OnLButtonUp(UINT nFlags, CPoint point)
 	CView::OnLButtonUp(nFlags, point);
 	int iX,iY;
 
+	//两个问题，1.不应该在鼠标事件中保存棋盘，应该在黑棋行棋之后Move()里，白棋行棋之后iMove()
+	//			2.int Temp[8][8]；局部变量，这个函数结束之后，内存释放，数据丢失
+
+
 
 	/*int Temp[8][8];
-
 	memcpy_s(Temp,8*8*4,iBoard,8*8*4);
 	Reset::Board_Reset.push_front(Temp);*/
 	/*int (*p)[8];
@@ -583,12 +590,12 @@ void CMyChessView::OnFileReset()
 }
 void CMyChessView::Reset_Board()
 {
-	if(Reset::Board_Reset.size() <= 1) return;
-	list<int (*)[8]>::iterator ite= Reset::Board_Reset.begin();
-	free(*ite);
+	if(Reset::Board_Reset.size() <= 1) return;//已经退回最初版本，不能在回退
+	list<int (*)[8]>::iterator ite= Reset::Board_Reset.begin();//走过的器已经压入链表，先把放进棋盘的拿出去
+	free(*ite);//拿出去之前释放空间，避免申请的空间内存泄漏
 	*ite = NULL;
-	Reset::Board_Reset.pop_front();
-	ite= Reset::Board_Reset.begin();
+	Reset::Board_Reset.pop_front();//拿出去
+	ite= Reset::Board_Reset.begin();//当前栈顶的元素就是前一步的棋盘
 	memcpy_s(iBoard,8*8*4,*ite,8*8*4);
-	Invalidate();
+	Invalidate();//刷新棋盘，显示。你将点击菜单的消息加入到MyChess类中，这个函数不能调用，我把它加到这个类中了
 }
